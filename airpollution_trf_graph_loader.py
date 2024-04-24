@@ -66,7 +66,13 @@ class AirpollutionDatasetLoader(object):
      
                 target_snapshot_dict[node]=values
             self.targets.append(target_snapshot_dict)
-                
+            
+    def _get_columns_names(self):
+        self._column_names= {}
+        for k,v in self._dataset['columns_ids'].items():
+            sorted_v = sorted(v.items(), key=lambda x: x[1])
+            ordered_columns = [item[0] for item in sorted_v]
+            self._column_names[k]= ordered_columns             
         
     def get_dataset(self, T= 1) -> StaticHeteroGraphTemporalSignal:
         """Returning the Spanish Airpollution data iterator.
@@ -80,6 +86,7 @@ class AirpollutionDatasetLoader(object):
         self._get_edges()
         self._get_edge_weights()
         self._get_targets_and_features()
+        self._get_columns_names()
         dataset = StaticHeteroGraphTemporalSignal(self._edges, self._edge_weights, self.features, self.targets)
         return dataset
     
@@ -88,4 +95,7 @@ class AirpollutionDatasetLoader(object):
     
     def get_n_total_snapshots(self):
         return self.n_total_snapshots
+
+    def get_column_names(self, node_type):
+        return self._column_names[node_type]
     
