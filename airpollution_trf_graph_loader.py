@@ -4,11 +4,19 @@ import urllib
 import numpy as np
 from torch_geometric_temporal.signal import StaticHeteroGraphTemporalSignal
 
+import json
+import os
+import urllib
+import numpy as np
+from torch_geometric_temporal.signal import StaticHeteroGraphTemporalSignal
+
 class AirpollutionDatasetLoader(object):
 
-    def __init__(self, city):
+    def __init__(self, city, include_trf=True):
         self.city= city
+        self._include_trf= include_trf
         self._read_file_data()
+        
 
     def _read_file_data(self):
         
@@ -26,13 +34,15 @@ class AirpollutionDatasetLoader(object):
         self._edges={}
         for s, values in self._dataset["edges"].items():
             edge_name= tuple(s.split('_'))
-            self._edges[edge_name]= np.array(values).T
+            if self._include_trf or ('trf' not in edge_name):
+                self._edges[edge_name]= np.array(values).T
 
     def _get_edge_weights(self):
         self._edge_weights={}
         for s, values in self._dataset["edges_attr"].items():
             edge_name= tuple(s.split('_'))
-            self._edge_weights[edge_name]= np.array(values)
+            if self._include_trf or ('trf' not in edge_name):
+                self._edge_weights[edge_name]= np.array(values)
 
     def _get_targets_and_features(self):
         self.features=[]
@@ -43,36 +53,37 @@ class AirpollutionDatasetLoader(object):
             feat_snapshot= self._dataset['snapshots'][snapshot_index]
             feat_snapshot_dict={}
             for node, values in feat_snapshot.items():
-                values = np.array(values)
-                            
-                if node != 'trf':
-                    values= values.reshape(-1,len(values))
-                
-                feat_snapshot_dict[node]=values
-                #print(node, values, len(values))
-                #print(values.shape)
-                if node not in self._feature_dim:
-                    self._feature_dim[node]=values.shape[1]
+                if self._include_trf or ('trf' != node):
+                    values = np.array(values)
+                                
+                    if node != 'trf':
+                        values= values.reshape(-1,len(values))
+                    
+                    feat_snapshot_dict[node]=values
+                    if node not in self._feature_dim:
+                        self._feature_dim[node]=values.shape[1]
                 
             self.features.append(feat_snapshot_dict)
             
             target_snapshot= self._dataset['snapshots'][snapshot_index+self._T]
             target_snapshot_dict={}
             for node, values in target_snapshot.items():
-                values = np.array(values)
-                            
-                if node != 'trf':
-                    values= values.reshape(-1,len(values))
-     
-                target_snapshot_dict[node]=values
+                if self._include_trf or ('trf' != node):
+                    values = np.array(values)
+                                
+                    if node != 'trf':
+                        values= values.reshape(-1,len(values))
+         
+                    target_snapshot_dict[node]=values
             self.targets.append(target_snapshot_dict)
-            
+
     def _get_columns_names(self):
         self._column_names= {}
         for k,v in self._dataset['columns_ids'].items():
-            sorted_v = sorted(v.items(), key=lambda x: x[1])
-            ordered_columns = [item[0] for item in sorted_v]
-            self._column_names[k]= ordered_columns             
+            if self._include_trf or ('trf' != k):
+                sorted_v = sorted(v.items(), key=lambda x: x[1])
+                ordered_columns = [item[0] for item in sorted_v]
+                self._column_names[k]= ordered_columns
         
     def get_dataset(self, T= 1) -> StaticHeteroGraphTemporalSignal:
         """Returning the Spanish Airpollution data iterator.
@@ -98,4 +109,4 @@ class AirpollutionDatasetLoader(object):
 
     def get_column_names(self, node_type):
         return self._column_names[node_type]
-    
+        
