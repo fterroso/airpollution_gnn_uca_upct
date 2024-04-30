@@ -61,7 +61,6 @@ class AirpollutionDatasetLoader(object):
                         values= values.reshape(-1,len(values))
                     
                     feat_snapshot_dict[node]=values
-                    print(node, values)
                     if node not in self._feature_dim:
                         self._feature_dim[node]=values.shape[1]
                 
