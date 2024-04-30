@@ -4,31 +4,32 @@ import urllib
 import numpy as np
 from torch_geometric_temporal.signal import StaticHeteroGraphTemporalSignal
 
-import json
-import os
-import urllib
-import numpy as np
-from torch_geometric_temporal.signal import StaticHeteroGraphTemporalSignal
-
 class AirpollutionDatasetLoader(object):
 
-    def __init__(self, city, include_trf=True):
+    def __init__(self, city, include_trf=True, synth=False):
         self.city= city
         self._include_trf= include_trf
+        self._synth= synth
         self._read_file_data()
         
 
     def _read_file_data(self):
-        
+        synth_str=""
+        if self._synth:
+            synth_str= "_synth"
+
+        city_str=""
         if self.city=='bilbao':
-            with open(os.path.join('data', 'graph_structure', 'bb_graph.json')) as f:
-                self._dataset = json.load(f)
+            city_str='bb'
         elif self.city=='madrid':
-            with open(os.path.join('data', 'graph_structure', 'md_graph.json')) as f:
-                self._dataset = json.load(f)
+            city_str='md'
         else:
             raise ValueError()
+        with open(os.path.join('data', 'graph_structure', f'{city_str}_graph{synth_str}.json')) as f:
+                    self._dataset = json.load(f)
+           
         self.n_total_snapshots= self._dataset['n_snapshots']
+        print(self.n_total_snapshots)
         
     def _get_edges(self):
         self._edges={}
@@ -60,6 +61,7 @@ class AirpollutionDatasetLoader(object):
                         values= values.reshape(-1,len(values))
                     
                     feat_snapshot_dict[node]=values
+                    print(node, values)
                     if node not in self._feature_dim:
                         self._feature_dim[node]=values.shape[1]
                 
