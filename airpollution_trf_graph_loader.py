@@ -29,7 +29,6 @@ class AirpollutionDatasetLoader(object):
                     self._dataset = json.load(f)
            
         self.n_total_snapshots= self._dataset['n_snapshots']
-        print(self.n_total_snapshots)
         
     def _get_edges(self):
         self._edges={}
