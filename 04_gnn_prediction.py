@@ -33,8 +33,8 @@ os.environ['CUDA_VISIBLE_DEVICES'] = ''
 n_layers= int(sys.argv[1])
 _T= int(sys.argv[2]) # time horizon 
 _city= sys.argv[3] #city
-_include_trf= bool(sys.argv[4])  # include or not traffic data as input
-_synth_data = bool(sys.argv[5]) #train using synthetic pollution/traffic data
+_include_trf= eval(sys.argv[4])  # include or not traffic data as input
+_synth_data = eval(sys.argv[5]) #train using synthetic pollution/traffic data
 print("Config params:", n_layers, _T, _city, _include_trf, _synth_data)
 
 device_ =torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -113,8 +113,12 @@ print('train snaps:',num_train_snapshots, 'testeval snaps:',num_testeval_snapsho
 
 
 #Training parameters
-n_epochs=900
-batch_size= 24 * 1 #hours (1-day batch)
+n_epochs=1
+
+batch_size= 12 # in hours
+if _T < 12:
+    batch_size= _T
+
 opt = torch.optim.Adam(model.parameters(), lr=0.001)
 
 def calculate_loss(y_hat_dict, y_dict):
@@ -228,9 +232,9 @@ if _synth_data:
     synth_data_str="synth"
     
 if _include_trf:
-    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_trf_{synth_data_str}.png'), bbox_inches='tight')
+    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_trf_{n_layers}_{synth_data_str}.png'), bbox_inches='tight')
 else:
-    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_no_trf_{synth_data_str}.png'), bbox_inches='tight')
+    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_no_trf_{n_layers}_{synth_data_str}.png'), bbox_inches='tight')
 
 
 # ## Get validation results
@@ -267,19 +271,26 @@ with torch.no_grad():
         _cols= loader.get_column_names(k)
         y_true_df[k]= pd.DataFrame(torch.vstack(v), columns=_cols)
     
-    if not os.path.exists(os.path.join('results')):
+    
+    results_dir= 'results'
+    if (n_layers==1) and not os.path.exists(os.path.join('results')):
         os.makedirs(os.path.join('results'))
+
+    if n_layers==2:
+        results_dir= 'results_2lstmlayers'
+        if not os.path.exists(os.path.join('results_2lstmlayers')):
+            os.makedirs(os.path.join('results_2lstmlayers'))
 
     for k, _df in y_hat_df.items():
         if _include_trf:
-            _df.to_csv(os.path.join('results',f'y_hat_{_city}_{_T}_{k}_trf_{synth_data_str}.csv'))
+            _df.to_csv(os.path.join(results_dir,f'y_hat_{_city}_{_T}_{k}_trf_{synth_data_str}.csv'))
         else:
-            _df.to_csv(os.path.join('results',f'y_hat_{_city}_{_T}_{k}_no_trf_{synth_data_str}.csv'))
+            _df.to_csv(os.path.join(results_dir,f'y_hat_{_city}_{_T}_{k}_no_trf_{synth_data_str}.csv'))
     for k, _df in y_true_df.items():
         if _include_trf:
-            _df.to_csv(os.path.join('results',f'y_true_{_city}_{_T}_{k}_trf_{synth_data_str}.csv'))    
+            _df.to_csv(os.path.join(results_dir,f'y_true_{_city}_{_T}_{k}_trf_{synth_data_str}.csv'))    
         else:
-            _df.to_csv(os.path.join('results',f'y_true_{_city}_{_T}_{k}_no_trf_{synth_data_str}.csv'))    
+            _df.to_csv(os.path.join(results_dir,f'y_true_{_city}_{_T}_{k}_no_trf_{synth_data_str}.csv'))    
 
 
 
