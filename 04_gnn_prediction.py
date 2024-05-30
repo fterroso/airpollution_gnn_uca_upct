@@ -113,11 +113,12 @@ print('train snaps:',num_train_snapshots, 'testeval snaps:',num_testeval_snapsho
 
 
 #Training parameters
-n_epochs=1
+n_epochs=900
 
-batch_size= 12 # in hours
-if _T < 12:
-    batch_size= _T
+batch_size= 24 # in hours
+# Given time horizons below 24 hours we adjust the batch size 
+if _T < 24: 
+    batch_size= 12
 
 opt = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -229,12 +230,12 @@ if not os.path.exists(os.path.join('figs')):
 
 synth_data_str=""
 if _synth_data:
-    synth_data_str="synth"
+    synth_data_str="_synth"
     
 if _include_trf:
-    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_trf_{n_layers}_{synth_data_str}.png'), bbox_inches='tight')
+    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_trf_{n_layers}{synth_data_str}.png'), bbox_inches='tight')
 else:
-    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_no_trf_{n_layers}_{synth_data_str}.png'), bbox_inches='tight')
+    plt.savefig(os.path.join('figs',f'mse_loss_evol_{_city}_{_T}_no_trf_{n_layers}{synth_data_str}.png'), bbox_inches='tight')
 
 
 # ## Get validation results
@@ -283,14 +284,14 @@ with torch.no_grad():
 
     for k, _df in y_hat_df.items():
         if _include_trf:
-            _df.to_csv(os.path.join(results_dir,f'y_hat_{_city}_{_T}_{k}_trf_{synth_data_str}.csv'))
+            _df.to_csv(os.path.join(results_dir,f'y_hat_{_city}_{_T}_{k}_trf{synth_data_str}.csv'))
         else:
-            _df.to_csv(os.path.join(results_dir,f'y_hat_{_city}_{_T}_{k}_no_trf_{synth_data_str}.csv'))
+            _df.to_csv(os.path.join(results_dir,f'y_hat_{_city}_{_T}_{k}_no_trf{synth_data_str}.csv'))
     for k, _df in y_true_df.items():
         if _include_trf:
-            _df.to_csv(os.path.join(results_dir,f'y_true_{_city}_{_T}_{k}_trf_{synth_data_str}.csv'))    
+            _df.to_csv(os.path.join(results_dir,f'y_true_{_city}_{_T}_{k}_trf{synth_data_str}.csv'))    
         else:
-            _df.to_csv(os.path.join(results_dir,f'y_true_{_city}_{_T}_{k}_no_trf_{synth_data_str}.csv'))    
+            _df.to_csv(os.path.join(results_dir,f'y_true_{_city}_{_T}_{k}_no_trf{synth_data_str}.csv'))    
 
 
 
